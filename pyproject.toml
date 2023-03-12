@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "pcb"
+version = "0.1.0"
+description = ""
+authors = ["tracebackerror <shivam9172@gmail.com>"]
+readme = "README.md"
+packages = [{include = "pcb_defect_detection_using_morpholifical_operation"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+pillow = "^9.4.0"
+pandas = "^1.5.3"
+numpy = "^1.24.2"
+opencv-python = "^4.7.0.72"
+scikit-image = "^0.20.0"
+matplotlib = "^3.7.1"
+django = "^4.1.7"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
