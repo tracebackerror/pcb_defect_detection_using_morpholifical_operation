@@ -2,19 +2,19 @@
 name = "pcb"
 version = "0.1.0"
 description = ""
-authors = ["tracebackerror <shivam9172@gmail.com>"]
+authors = [""]
 readme = "README.md"
 packages = [{include = "pcb_defect_detection_using_morpholifical_operation"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"
-pillow = "^9.4.0"
-pandas = "^1.5.3"
-numpy = "^1.24.2"
-opencv-python = "^4.7.0.72"
-scikit-image = "^0.20.0"
-matplotlib = "^3.7.1"
-django = "^4.1.7"
+pillow = "^9.4.0" # Image Processing
+pandas = "^1.5.3" # Data Analysis https://pandas.pydata.org/docs/getting_started/index.html#getting-started
+numpy = "^1.24.2" # Numerical Computation https://numpy.org/
+opencv-python = "^4.7.0.72" # Computer Vision - https://opencv.org/
+scikit-image = "^0.20.0" # ML & Image Processing - https://scikit-image.org/
+matplotlib = "^3.7.1" # Plotting Graph
+django = "^4.1.7" # Web Framework
 
 
 [build-system]

@@ -154,8 +154,12 @@ viewBox="0 24 150 28" preserveAspectRatio="none" shape-rendering="auto">
 <!--Header ends-->
 
 <!--Content starts-->
-
+<div class="container">
+    <center><h3>Hello, <b>{{ request.user.username }}</b></h3></center>
+</div>
 <div class="content flex">
+
+    <br/>
     <p>
     <form action="" method="post" enctype="multipart/form-data">
         {% csrf_token %}
@@ -170,7 +174,12 @@ viewBox="0 24 150 28" preserveAspectRatio="none" shape-rendering="auto">
         onclick="hide()" id="btnID">
         Hide Results
     </button>
-
+    <form  method="post" action="/logout">
+        {% csrf_token %}
+        <button type="submit">
+            LogOut
+        </button>
+    </form>
     </p>
 </div>
 <!--Content ends-->
