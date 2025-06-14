@@ -6,9 +6,9 @@ import numpy as np
 
 # Paths of two image frames
 
-image1Path = "./tests/pcb1.jpg";
+image1Path = "./tests/pcb1_original.jpg";
 
-image2Path = "./tests/pcb1_missingpinhole.jpg";
+image2Path = "./tests/pcb1_missingpinhole_defective.jpg";
 
 # Open the images
 

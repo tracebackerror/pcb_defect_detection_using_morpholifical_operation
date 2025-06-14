@@ -7,15 +7,45 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PCB Defect Detection</title>
 
+    <!-- Include Highcharts -->
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
 
     <!-- Viewer.js for Zooming -->
     <script src="https://cdn.jsdelivr.net/npm/viewerjs@1.11.3/dist/viewer.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/viewerjs@1.11.3/dist/viewer.min.css">
+      <style>
+        body {
+            font-family: 'Arial', sans-serif;
+        }
 
+        .content {
+            text-align: center;
+            margin: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #chart-container {
+            margin: 40px auto;
+            width: 80%;
+        }
+    </style>
     <style>
-        /* General styles (same as before) */
+        /* General styles */
         body {
             margin: 0;
             font-family: 'Lato', sans-serif;
@@ -28,10 +58,6 @@
             background: linear-gradient(60deg, rgba(84, 58, 183, 1) 0%, rgba(0, 172, 193, 1) 100%);
             color: white;
             padding: 20px;
-        }
-
-        .header svg {
-            width: 50px;
         }
 
         .header h1 {
@@ -75,15 +101,43 @@
         button:hover {
             background: linear-gradient(60deg, #75ecdd, #84a9ff);
         }
+
+        /* CNN Results Section */
+        .cnn-results-grid {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #e8f0fa; /* Light background for container */
+            border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1); /* Slight shadow for design */
+        }
+
+        #cnn-results-container img {
+            cursor: zoom-in; /* Enable visual indication of zoom ability */
+        }
+
+        .cnn-result-item img {
+            width: 300px;
+            height: auto; /* Maintain aspect ratio */
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1); /* Add a bit of depth to images */
+        }
+
+        .cnn-result-item p {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
     </style>
 </head>
 
 <body>
     <!-- Header -->
     <div class="header">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
-            <circle cx="250" cy="250" r="200" fill="#fff" />
-        </svg>
         <h1>PCB Defect Detection</h1>
     </div>
 
@@ -98,18 +152,31 @@
             <input type="submit" value="Upload">
         </form>
 
-        <!-- Show Results + Hide Results -->
-        <button onclick="showResults()">Show Results</button>
-        <button onclick="hideResults()">Hide Results</button>
+        <!-- Buttons for Results -->
+        <button type="button" onclick="processWithCNN()">Process using CNN</button>
+        <button onclick="showGeneralResults()">Show General Results</button>
+        <button onclick="showCNNResults()">Show CNN Results</button>
+        <button onclick="hideAllResults()">Hide All Results</button>
+                <!-- Performance Check Button -->
+        <div style="text-align: center; margin: 30px;">
+            <button type="button" onclick="fetchPerformanceData()">Check Performance</button>
+        </div>
+
 
         <!-- Logout -->
         <form method="post" action="/logout" style="margin-top: 20px;">
             {% csrf_token %}
             <button type="submit">Logout</button>
         </form>
+
     </div>
 
-    <!-- Image Grid -->
+    <!-- Performance Chart Section -->
+        <div id="chart-container" style="width: 80%; margin: 40px auto;"></div>
+
+
+    <h2 style="text-align: center; margin-top: 30px;">Morpholoigcal Results</h2>
+    <!-- General Image Grid -->
     <div class="image-grid" id="image-container">
         <img id="first_image" src="{% static 'first_image.jpg' %}" alt="First Image">
         <img id="second_image" src="{% static 'second_image.jpg' %}" alt="Second Image">
@@ -119,47 +186,254 @@
         <img id="filled_after" src="{% static 'filled_after.jpg' %}" alt="Filled After">
     </div>
 
-    <script>
-        let viewer = null; // Viewer reference
+    <!-- CNN Results Section -->
+    <div class="content">
+        <h2 style="text-align: center; margin-top: 30px;">CNN Results</h2>
+        <div class="cnn-results-grid" id="cnn-results-container" style="display: none;"> <!-- Hide by default -->
+            <!-- CNN Source Result -->
+            <div class="cnn-result-item">
+                <img id="vgg16_source_result" src="{% static 'vgg16_source_result.jpg' %}" alt="CNN Source Result">
+                <p style="text-align: center; margin-top: 10px;">Source Result</p>
+            </div>
+            <!-- CNN Destination Result -->
+            <div class="cnn-result-item">
+                <img id="vgg16_destination_result" src="{% static 'vgg16_destination_result.jpg' %}" alt="CNN Destination Result">
+                <p style="text-align: center; margin-top: 10px;">Destination Result</p>
+            </div>
+        </div>
+    </div>
 
-        // Function to show results and refresh images
-        function showResults() {
-            // Add a timestamp to each image URL to bust cache
-            const images = document.querySelectorAll('.image-grid img');
-            const timestamp = Date.now(); // Unique identifier (current time)
+    <script>
+        let viewerGeneral = null; // Viewer for General Images
+        let viewerCNN = null; // Viewer for CNN Results Images
+
+        // Function to process CNN results (backend communication)
+        function processWithCNN() {
+            fetch('/process_cnn', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCSRFToken(),
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert("Processed with CNN successfully!");
+                } else {
+                    console.error('Error processing with CNN:', response.statusText);
+                    alert("An error occurred during CNN processing.");
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert("An error occurred during CNN processing.");
+            });
+        }
+
+        // Function to show general results
+        function showGeneralResults() {
+            const images = document.querySelectorAll('#image-container img');
+            const timestamp = Date.now();
             images.forEach(img => {
-                const src = img.getAttribute('src').split('?')[0]; // Remove existing query string if any
-                img.setAttribute('src', `${src}?v=${timestamp}`); // Add unique query string
-                img.style.display = 'block'; // Make image visible
+                const src = img.getAttribute('src').split('?')[0];
+                img.setAttribute('src', `${src}?v=${timestamp}`);
+                img.style.display = 'block';
             });
 
-            // Reinitialize Viewer.js with refreshed images
-            if (viewer) {
-                viewer.destroy(); // Destroy previous instance
-            }
-            viewer = new Viewer(document.getElementById('image-container'), {
+            if (viewerGeneral) viewerGeneral.destroy();
+            viewerGeneral = new Viewer(document.getElementById('image-container'), {
                 inline: false,
                 zoomable: true,
                 scalable: true,
                 movable: true,
                 toolbar: true,
-                transition: true,
             });
         }
 
-        // Function to hide all images
-        function hideResults() {
-            const images = document.querySelectorAll('.image-grid img');
-            images.forEach(img => {
-                img.style.display = 'none'; // Hide image
+        // Function to show CNN results with interactive Viewer.js
+        function showCNNResults() {
+            const cnnContainer = document.getElementById('cnn-results-container');
+            const cnnImages = cnnContainer.querySelectorAll('img');
+            const timestamp = Date.now();
+            cnnImages.forEach(img => {
+                const src = img.getAttribute('src').split('?')[0];
+                img.setAttribute('src', `${src}?v=${timestamp}`);
+                img.style.display = 'block';
+            });
+            cnnContainer.style.display = 'flex'; // Make the CNN section visible
+
+            // Initialize Viewer.js for CNN Results
+            if (viewerCNN) viewerCNN.destroy();
+            viewerCNN = new Viewer(document.getElementById('cnn-results-container'), {
+                inline: false,
+                zoomable: true,
+                scalable: true,
+                movable: true,
+                toolbar: true,
+            });
+        }
+
+        // Function to hide all results
+        function hideAllResults() {
+            const generalImages = document.querySelectorAll('#image-container img');
+            const cnnContainer = document.getElementById('cnn-results-container');
+            const cnnImages = cnnContainer.querySelectorAll('img');
+
+            // Hide general results
+            generalImages.forEach(img => {
+                img.style.display = 'none';
             });
 
-            // Destroy Viewer.js instance when hiding images
-            if (viewer) {
-                viewer.destroy();
-                viewer = null;
+            // Hide CNN results
+            cnnImages.forEach(img => {
+                img.style.display = 'none';
+            });
+            cnnContainer.style.display = 'none'; // Hide the CNN results container
+
+            if (viewerGeneral) {
+                viewerGeneral.destroy();
+                viewerGeneral = null;
+            }
+            if (viewerCNN) {
+                viewerCNN.destroy();
+                viewerCNN = null;
             }
         }
+
+        // Helper function to retrieve CSRF token from cookies
+        function getCSRFToken() {
+            const name = "csrftoken";
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.startsWith(name + '=')) {
+                    return decodeURIComponent(cookie.substring(name.length + 1));
+                }
+            }
+            return null;
+        }
+
+         function checkPerformance() {
+        fetch('/performance_check', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCSRFToken(), // CSRF for Django
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => {
+            if (!response.ok) throw new Error(response.statusText);
+            return response.json();
+        })
+        .then(data => {
+            if (data.status === 'success') {
+                // Show the performance graph after success
+                document.getElementById("performance-graph-container").style.display = "block";
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            alert("An error occurred while computing performance!");
+        });
+    }
+
+    // CSRF Helper Function
+    function getCSRFToken() {
+        const name = "csrftoken";
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.startsWith(name + '=')) {
+                return decodeURIComponent(cookie.substring(name.length + 1));
+            }
+        }
+        return null;
+    }
+
+
+   function fetchPerformanceData() {
+    fetch('/performance_check', {
+        method: 'POST', // Ensure it's a POST request
+        headers: {
+            'X-CSRFToken': getCSRFToken(), // CSRF Token for POST
+            'Content-Type': 'application/json'
+        }
+    })
+        .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
+            return response.json();
+        })
+        .then(data => {
+            if (data.status === 'success') {
+                createChart(data.data); // Pass the response to the chart generator
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to fetch performance metrics.');
+        });
+}
+
+function createChart(data) {
+    Highcharts.chart('chart-container', {
+        chart: {
+            type: 'column'
+        },
+        title: {
+            text: 'Performance Comparison: SSIM vs. CNN'
+        },
+        xAxis: {
+            categories: data.labels, // PCB Pair Labels (X-axis)
+            title: {
+                text: 'PCB Pairs'
+            }
+        },
+        yAxis: {
+            min: 0,
+            title: {
+                text: 'Scores'
+            }
+        },
+        series: [
+            {
+                name: 'SSIM Scores',
+                data: data.ssim_scores, // SSIM Values
+                color: 'blue'
+            },
+            {
+                name: 'CNN Prediction Differences',
+                data: data.cnn_scores, // CNN Difference Values
+                color: 'green'
+            }
+        ],
+        legend: {
+            layout: 'horizontal',
+            align: 'center',
+            verticalAlign: 'bottom'
+        },
+        tooltip: {
+            shared: true
+        }
+    });
+}
+
+function getCSRFToken() {
+    const name = "csrftoken";
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.startsWith(name + '=')) {
+            return decodeURIComponent(cookie.substring(name.length + 1));
+        }
+    }
+    return null;
+}
+
     </script>
 </body>
 

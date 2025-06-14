@@ -10,8 +10,8 @@ Imput Image 1:
 
 Try this markdown:
 
-![alt text](./src/tests/pcb1.jpg)
-![alt text](./src/tests/pcb1_missingpinhole.jpg)
+![alt text](./src/tests/pcb1_original.jpg)
+![alt text](./src/tests/pcb1_missingpinhole_defective.jpg)
 
 Defect Detection
 ![alt text](./src/pdv_web_app/static/filled_after.jpg)

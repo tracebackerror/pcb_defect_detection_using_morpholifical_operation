@@ -6,9 +6,9 @@ from matplotlib import pyplot as plt
 rows = 2
 columns = 2
 
-# image1Path = "./tests/pcb1.jpg";
+# image1Path = "./tests/pcb1_original.jpg";
 #
-# image2Path = "./tests/pcb1_missingpinhole.jpg";
+# image2Path = "./tests/pcb1_missingpinhole_defective.jpg";
 
 def pcb_defect_detection_algorithm(image1Path=None, image2Path=None):
         # Load images
