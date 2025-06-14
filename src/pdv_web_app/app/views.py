@@ -53,7 +53,7 @@ class LoginView(TemplateView):
             messages.success(self.request, f' welcome {username} !!')
             return redirect(reverse("index"))
 
-        messages.info(self.request, f'account done not exit plz sign in')
+        messages.info(self.request, f'Incorrect Credentials')
         return self.render_to_response(context)
 
 @login_required(login_url="/login")
