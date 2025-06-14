@@ -134,8 +134,9 @@ def performance_check(request):
     """
     try:
         # Path to test images directory
-        TEST_IMAGE_DIR = "/Users/tracebackerror/Documents/GitHub/pcb_defect_detection_using_morpholifical_operation/src/tests"
-
+        TEST_IMAGE_DIR = os.path.join(
+        settings.BASE_DIR, 'app', 'tests_performance'
+        )
         # Dynamically load image pairs
         IMAGE_PAIRS = get_image_pairs(TEST_IMAGE_DIR)
         if not IMAGE_PAIRS:
