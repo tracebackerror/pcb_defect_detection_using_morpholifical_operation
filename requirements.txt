@@ -1,0 +1,7 @@
+
+pillow
+pandas
+opencv-python
+scikit-image
+matplotlib
+django==4.1.7

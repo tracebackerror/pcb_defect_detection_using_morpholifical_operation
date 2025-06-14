@@ -257,7 +257,7 @@ button:active {
                         <form action="/login" method="POST">
                             {% csrf_token %}
                             <input type="text" name="username" placeholder="USERNAME"/>
-                            <input type="text" name="password" placeholder="PASSWORD"/>
+                            <input type="password" name="password" placeholder="PASSWORD"/>
                             <button>LOGIN</button>
 
                         </form>
@@ -271,7 +271,7 @@ button:active {
                         <form action="/register" method="POST">
                             {% csrf_token %}
                             <input type="text" name="username" placeholder="USERNAME"/>
-                            <input type="text" name="password" placeholder="PASSWORD"/>
+                            <input type="password" name="password" placeholder="PASSWORD"/>
                             <button>REGISTER</button>
                         </form>
                         <button onclick="anim()">BACK</button>
